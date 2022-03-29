@@ -1,0 +1,61 @@
+<launch>
+  <!-- オドメトリの配信ノード -->
+  <!--  <node pkg="megarover_samples" type="pub_odom" name="pub_odom" /> -->
+  <!--  <include file="home/sick/catkin_ws/src/ros_whill/launch/ros_whill.launch" /> -->
+  <include file="$(find sick_whill)/launch/sick_whill_cartographer.launch" />
+
+
+  <!-- LRFのデバイスドライバノード -->
+  <!--  <node name="horizontal_laser" pkg="urg_node"
+    type="urg_node" >
+    <param name="serial_port" value="/dev/ttyACM0" />
+    <param name="frame_id" value="horizontal_laser_link" />
+    <param name="angle_min" value="-1.57" />
+    <param name="angle_max" value="1.57" />
+  </node>
+   -->
+
+	<include file="$(find sick_whill)/launch/whill_sick_mrs_1xxx.launch">
+		<arg name="hostname" value="192.168.0.1" />
+		<arg name="frame_id" value="mrs_link" />
+		<arg name="cloud_topic" value="mrs_cloud" />
+	</include>
+<!--	<node pkg="tf" type="static_transform_publisher" name="stp_mrs_laser" args="-0.1 0 1.3 0 0 0 base_link mrs_link 100" /> -->
+
+	<!--         tim 5xx node           -->
+	<!-- publish_sensor_topic:"tim_cloud, tim_scan" -->
+<!--	<include file="$(find sick_whill)/launch/whill_sick_tim_5xx.launch" >
+		<arg name="hostname" value="192.168.0.2" />
+		<arg name="frame_id" value="tim_link" />
+		<arg name="cloud_topic" value="tim_cloud" />	
+	</include>
+	<node pkg="tf" type="static_transform_publisher" name="stp_tim_laser" args="0.95 0 0.2 0 0 0 laser_link tim_link 100" />
+ -->
+
+
+  <!-- メガローバーのロボットモデルの配信ノード ros_whill.launch dekisai -->
+  <param name="robot_description"
+    textfile="$(find cartographer_ros)/urdf/whill_robot.urdf" />
+  <node name="robot_state_publisher" pkg="robot_state_publisher"
+    type="robot_state_publisher" />
+
+  <!-- cartographer -->
+  <node name="cartographer_node" pkg="cartographer_ros"
+      type="cartographer_node" args="
+          -configuration_directory $(find cartographer_ros)/configuration_files
+          -configuration_basename whill_robot.lua"
+      output="screen">
+    <remap from="points2" to="mrs_cloud" />
+    <!-- <remap from="odom" to="whill/odom" /> -->
+    <!--    <remap from="imu" to="whill/states/imu" /> -->
+    <!--<remap from="echoes" to="horizontal_laser_2d" />-->
+  </node>
+  <!-- グリッドマップの分解能の設定 -->
+  <node name="cartographer_occupancy_grid_node" pkg="cartographer_ros"
+      type="cartographer_occupancy_grid_node" args="-resolution 0.015" />
+
+  <!-- Rviz -->
+  <node name="rviz" pkg="rviz" type="rviz" required="true"
+      args="-d $(find cartographer_ros)/configuration_files/demo_3d.rviz" />
+</launch>
+

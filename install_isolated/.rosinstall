@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/sick/catkin_ws_isolated/install_isolated/setup.sh
